@@ -2,13 +2,12 @@
   "name": "dsh-prompt-optimizer",
   "version": "1.0.0",
   "type": "module",
-  "description": "DeepSeek Harness plugin: rewrite a plain-language draft into a precise prompt from the composer, and retract or edit messages you already sent",
+  "description": "DeepSeek Harness plugin: rewrite a plain-language draft into a precise prompt, using any model you have already configured",
   "license": "MIT",
   "keywords": [
     "dsh",
     "dsh-plugin",
     "deepseek-harness",
-    "prompt",
     "prompt-optimizer",
     "composer"
   ],
