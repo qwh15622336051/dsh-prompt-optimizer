@@ -1617,9 +1617,28 @@ window.__ModuleLoader__.load({
       const showRetract = canAct && settings?.enableRetract === true;
 
       /**
-       * Close the in-place editor, roll the conversation back to before this
-       * message, and send the rewritten text as the new turn.
+       * Archive the session this one replaced.
+       *
+       * Retries once: a lingering copy would sit beside the new session in the
+       * sidebar, which reads as "a new chat was created" rather than "the same
+       * conversation continued".
+       * @returns {Promise<boolean>} whether it was archived.
        */
+      async function archiveReplaced() {
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            await uiWorkspace?.archiveSession?.(sessionId);
+            return true;
+          } catch (archiveError) {
+            if (attempt === 1) {
+              console.warn('[prompt-optimizer] archiving the replaced session failed:', archiveError);
+              recordRollbackError(t('recallArchiveFailed'));
+            }
+          }
+        }
+        return false;
+      }
+
       /**
        * Read the message's images into prompt content parts.
        *
@@ -1666,7 +1685,7 @@ window.__ModuleLoader__.load({
             recordRollbackError(t('recallImagesNotRestored'));
           }
 
-          const childId = await sessions.fork({ sessionId, atSeq: seq - 1, increaseTitle: true });
+          const childId = await sessions.fork({ sessionId, atSeq: seq - 1 });
           const reference = sessions.retain(childId, { source: 'controllerOperation' });
           try {
             const settled = await reference.ready;
@@ -1693,12 +1712,7 @@ window.__ModuleLoader__.load({
 
           setEditing(false);
           uiWorkspace?.openSession?.(childId);
-          try {
-            await uiWorkspace?.archiveSession?.(sessionId);
-          } catch (archiveError) {
-            console.warn('[prompt-optimizer] archiving the replaced session failed:', archiveError);
-            recordRollbackError(t('recallArchiveFailed'));
-          }
+          await archiveReplaced();
         } catch (caught) {
           const message = caught instanceof Error ? caught.message : String(caught);
           setError(message);
@@ -1734,7 +1748,7 @@ window.__ModuleLoader__.load({
 
           const text = prepared.text;
           const images = imageIds();
-          const childId = await sessions.fork({ sessionId, atSeq: seq - 1, increaseTitle: true });
+          const childId = await sessions.fork({ sessionId, atSeq: seq - 1 });
 
           const refill = settings?.rollbackRefillDraft !== false;
           if (refill && text !== '') {
@@ -1767,13 +1781,7 @@ window.__ModuleLoader__.load({
           if (hasFileAttachments()) warnings.push(t('recallFilesNotRestored'));
 
           uiWorkspace?.openSession?.(childId);
-          try {
-            await uiWorkspace?.archiveSession?.(sessionId);
-          } catch (archiveError) {
-            // Surface it: leaving two sessions with no explanation is worse.
-            console.warn('[prompt-optimizer] archiving the replaced session failed:', archiveError);
-            recordRollbackError(t('recallArchiveFailed'));
-          }
+          await archiveReplaced();
         } catch (caught) {
           const message = caught instanceof Error ? caught.message : String(caught);
           setError(message);
