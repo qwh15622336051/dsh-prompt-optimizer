@@ -57,6 +57,15 @@ window.__ModuleLoader__.load({
         result: codec('PromptOptimizeResult'),
       },
       {
+        id: `${PACKAGE}#${NAMESPACE}/rewind`,
+        namespace: NAMESPACE,
+        service: NAMESPACE,
+        method: 'rewind',
+        invocation: { kind: 'direct' },
+        parameters: [parameter('sessionId'), parameter('targetSeq')],
+        result: codec('PromptOptimizeRewindResult'),
+      },
+      {
         id: `${PACKAGE}#${NAMESPACE}/getSettings`,
         namespace: NAMESPACE,
         service: NAMESPACE,
@@ -142,6 +151,7 @@ window.__ModuleLoader__.load({
         saving: '处理中…',
         editSendFailed: '已回退对话，但重新发送失败，请手动发送。',
         editEmpty: '内容为空，无法重发。',
+        rewindFailed: '回退对话失败。',
         model: '模型',
         reasoning: '推理等级',
         permission: '权限',
@@ -718,10 +728,12 @@ window.__ModuleLoader__.load({
     /* ------------------------------------------------------------------ *
      * Message retract / edit (BETA)
      *
-     * Rolling the conversation back uses the official `sessions.fork`: the
-     * Host cuts a new session at the exact event prefix that precedes the
-     * target message, so the event log of the replaced session is never
-     * mutated and stays recoverable from the session list.
+     * Rolling the conversation back goes through the kernel's own surface
+     * replacement: the Host appends an empty user message whose `surfaceOp`
+     * supersedes the target message and everything after it. The event log stays
+     * append-only, the transcript hides the superseded range, and the model
+     * stops seeing it — so the conversation continues in this same Session
+     * instead of branching into a new one.
      *
      * The shipped user-message renderer hard-codes its action icons and
      * exposes no plugin seat, so this shadows `conversation.chat.node` key
@@ -807,8 +819,8 @@ window.__ModuleLoader__.load({
     /**
      * Confirm a seq really is an appended user message before forking on it.
      *
-     * `sessions.fork` cuts the log at exactly the seq it is handed, so an
-     * unverified seq would truncate the conversation somewhere unintended.
+     * The rewind range is derived from this seq, so an unverified value could
+     * cut the conversation back somewhere unintended.
      * @returns {boolean} whether the loaded window shows an appended user message there.
      */
     function isUserMessageSeq(binding, seq) {
@@ -1617,29 +1629,6 @@ window.__ModuleLoader__.load({
       const showRetract = canAct && settings?.enableRetract === true;
 
       /**
-       * Archive the session this one replaced.
-       *
-       * Retries once: a lingering copy would sit beside the new session in the
-       * sidebar, which reads as "a new chat was created" rather than "the same
-       * conversation continued".
-       * @returns {Promise<boolean>} whether it was archived.
-       */
-      async function archiveReplaced() {
-        for (let attempt = 0; attempt < 2; attempt += 1) {
-          try {
-            await uiWorkspace?.archiveSession?.(sessionId);
-            return true;
-          } catch (archiveError) {
-            if (attempt === 1) {
-              console.warn('[prompt-optimizer] archiving the replaced session failed:', archiveError);
-              recordRollbackError(t('recallArchiveFailed'));
-            }
-          }
-        }
-        return false;
-      }
-
-      /**
        * Read the message's images into prompt content parts.
        *
        * `PromptContentPart` carries image bytes rather than attachment ids, so the
@@ -1685,34 +1674,19 @@ window.__ModuleLoader__.load({
             recordRollbackError(t('recallImagesNotRestored'));
           }
 
-          const childId = await sessions.fork({ sessionId, atSeq: seq - 1 });
-          const reference = sessions.retain(childId, { source: 'controllerOperation' });
-          try {
-            const settled = await reference.ready;
-            // Send the rewritten turn right away. Seating it in the composer would
-            // make "save and resend" need a second, manual send.
-            const result = await settled.session.prompt([{ type: 'text', text }, ...imageParts], 'queue');
-            if (result?.ok !== true) {
-              const reason = result?.error?.message ?? t('editSendFailed');
-              // Never lose what the user typed: park it in the child's composer.
-              try {
-                conversationInput?.requestDraftInitialization?.(settled, {
-                  prompt: text,
-                  whenDraftExists: 'replace',
-                });
-              } catch {
-                /* the reported failure below is the actionable one */
-              }
-              setError(reason);
-              recordRollbackError(reason);
-            }
-          } finally {
-            reference.release?.();
-          }
+          // Cut the surface back in place, then send the rewritten turn here.
+          // No fork: the conversation continues in this same Session.
+          const cut = await remote.rewind(sessionId, seq);
+          if (cut?.ok !== true) throw new Error(cut?.error?.message ?? t('rewindFailed'));
 
+          const live = sessions.binding(sessionId)?.session;
+          const sent = await live.prompt([{ type: 'text', text }, ...imageParts], 'queue');
+          if (sent?.ok !== true) {
+            const reason = sent?.error?.message ?? t('editSendFailed');
+            setError(reason);
+            recordRollbackError(reason);
+          }
           setEditing(false);
-          uiWorkspace?.openSession?.(childId);
-          await archiveReplaced();
         } catch (caught) {
           const message = caught instanceof Error ? caught.message : String(caught);
           setError(message);
@@ -1742,46 +1716,20 @@ window.__ModuleLoader__.load({
         try {
           const binding = sessions.binding(sessionId);
           if (binding?.session?.getSnapshot?.()?.running) throw new Error(t('recallRunning'));
-          if (seq === undefined) throw new Error(t('recallCannotFork'));
-          // Never fork on an unverified seq: fork cuts the log exactly there.
-          if (!isUserMessageSeq(binding, seq)) throw new Error(t('recallNoAnchor'));
+          if (seq === undefined || !isUserMessageSeq(binding, seq)) throw new Error(t('recallNoAnchor'));
 
           const text = prepared.text;
           const images = imageIds();
-          const childId = await sessions.fork({ sessionId, atSeq: seq - 1 });
 
-          const refill = settings?.rollbackRefillDraft !== false;
-          if (refill && text !== '') {
-            try {
-              // Seed the child's draft before navigation publishes it, so the
-              // editor mounts already holding the text.
-              const reference = sessions.retain(childId, { source: 'controllerOperation' });
-              try {
-                const outcome = conversationInput?.requestDraftInitialization?.(reference.binding, {
-                  prompt: text,
-                  whenDraftExists: 'replace',
-                });
-                if (outcome !== 'applied') warnings.push(t('recallRefillFailed'));
-                // Images are the only attachment kind the official surface reads back.
-                if (images.length > 0 && typeof conversationInput?.for === 'function') {
-                  const input = conversationInput.for(reference.binding.ctx);
-                  const added = input?.addAttachments?.(images);
-                  if (added === false) warnings.push(t('recallImagesNotRestored'));
-                } else if (images.length > 0) {
-                  warnings.push(t('recallImagesNotRestored'));
-                }
-              } finally {
-                reference.release?.();
-              }
-            } catch (seedError) {
-              console.warn('[prompt-optimizer] draft refill failed:', seedError);
-              warnings.push(t('recallRefillFailed'));
-            }
+          const cut = await remote.rewind(sessionId, seq);
+          if (cut?.ok !== true) throw new Error(cut?.error?.message ?? t('rewindFailed'));
+
+          if (settings?.rollbackRefillDraft !== false && text !== '') inputActions?.setDraft?.(text);
+          if (images.length > 0) {
+            const added = inputActions?.addAttachments?.(images);
+            if (added === false) warnings.push(t('recallImagesNotRestored'));
           }
           if (hasFileAttachments()) warnings.push(t('recallFilesNotRestored'));
-
-          uiWorkspace?.openSession?.(childId);
-          await archiveReplaced();
         } catch (caught) {
           const message = caught instanceof Error ? caught.message : String(caught);
           setError(message);
