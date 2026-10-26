@@ -27,11 +27,8 @@
 
 ## 安装
 
-本插件未发布到 npm，从仓库安装：
-
 ```sh
-git clone https://github.com/qwh15622336051/dsh-prompt-optimizer
-dsh plugin add ./dsh-prompt-optimizer
+dsh plugin add @huanhuan123/dsh-prompt-optimizer
 ```
 
 ## 使用

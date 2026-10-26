@@ -1,6 +1,6 @@
 {
-  "name": "@qwh15622336051/dsh-prompt-optimizer",
-  "version": "1.0.0",
+  "name": "@huanhuan123/dsh-prompt-optimizer",
+  "version": "1.0.1",
   "type": "module",
   "description": "DeepSeek Harness plugin: rewrite a plain-language draft into a precise prompt, using any model you have already configured",
   "license": "MIT",

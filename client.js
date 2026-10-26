@@ -8,7 +8,7 @@
  * names, parameter wire names and order).
  */
 window.__ModuleLoader__.load({
-  id: '@qwh15622336051/dsh-prompt-optimizer',
+  id: '@huanhuan123/dsh-prompt-optimizer',
   factory(require) {
     const React = require('react');
     const h = React.createElement;
@@ -16,7 +16,7 @@ window.__ModuleLoader__.load({
     // degrades to inline fixed positioning instead of failing to render.
 
     /** Package identity; must equal package.json `name`. */
-    const PACKAGE = '@qwh15622336051/dsh-prompt-optimizer';
+    const PACKAGE = '@huanhuan123/dsh-prompt-optimizer';
     /** Wire namespace; also the Cordis Service key of the Host Remote service. */
     const NAMESPACE = 'promptOptimizer';
     /** Loader row id declared by cordis.patch.yml. */

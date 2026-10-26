@@ -28,11 +28,8 @@ One click replaces the draft. **Nothing is sent for you**: you review the result
 
 ## Install
 
-Not published to npm; install from the repository:
-
 ```sh
-git clone https://github.com/qwh15622336051/dsh-prompt-optimizer
-dsh plugin add ./dsh-prompt-optimizer
+dsh plugin add @huanhuan123/dsh-prompt-optimizer
 ```
 
 ## Usage

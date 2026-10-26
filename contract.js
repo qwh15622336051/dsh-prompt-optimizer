@@ -9,7 +9,7 @@
  */
 
 /** Package identity; must equal package.json `name`. */
-export const PACKAGE = '@qwh15622336051/dsh-prompt-optimizer';
+export const PACKAGE = '@huanhuan123/dsh-prompt-optimizer';
 
 /** Wire namespace; also the Cordis Service key of the Remote service. */
 export const NAMESPACE = 'promptOptimizer';
