@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { DESCRIPTORS, NAMESPACE, PACKAGE } from './contract.js';
 import { CONFIG_KEYS, Config, SETTINGS_NAMESPACE, SETTINGS_SCHEMA, materializeConfig } from './config.js';
 
@@ -62,23 +61,6 @@ function extractPrompt(raw) {
     '',
   );
   return out.trim();
-}
-
-/**
- * The replacement message for a surface cut.
- *
- * `createUserMessage` in the kernel is only `{...input, id: randomUUID()}`
- * frozen, so the same shape is built here with a Node built-in and this half
- * keeps no `@deepseek-ai/*` runtime import. Empty content is what keeps the
- * placeholder from rendering as a bubble.
- */
-function emptyUserMessage() {
-  return Object.freeze({
-    id: randomUUID(),
-    role: 'user',
-    content: [],
-    source: { kind: 'prompt-optimizer-rewind' },
-  });
 }
 
 /** Keep only known configuration keys from an untrusted patch. */
@@ -303,43 +285,6 @@ class PromptOptimizerRemote {
   }
 
   /**
-   * Cut this Session's model-visible surface back to before one user message.
-   *
-   * Appending a replacement user message over the surface range is the kernel's
-   * own mechanism: the event log stays append-only, while the transcript hides
-   * the superseded range and the model stops seeing it. No new Session is made,
-   * so the conversation continues exactly where it was.
-   * @param {string} sessionId - addressed Session.
-   * @param {number} targetSeq - seq of the user message to cut back to.
-   * @returns {Promise<object>} how much of the surface was shadowed.
-   */
-  async rewind(sessionId, targetSeq) {
-    if (typeof targetSeq !== 'number' || !Number.isInteger(targetSeq) || targetSeq < 0) {
-      throw new Error('无法定位要回退的消息。');
-    }
-    const agent = this.ctx.get('agents')?.get(sessionId);
-    if (!agent) throw new Error('会话尚未加载或已关闭，请重新打开会话后重试。');
-    const session = agent.session;
-
-    // The surface is the authority on what the model currently sees.
-    const nodes = Array.isArray(session.surface?.nodes) ? session.surface.nodes : [];
-    const index = nodes.indexOf(targetSeq);
-    if (index < 0) throw new Error('这条消息已经不在当前对话表层，无法回退。');
-    const shadowed = nodes.slice(index);
-    const last = shadowed[shadowed.length - 1];
-
-    try {
-      session.append('user/message', emptyUserMessage(), {
-        surfaceOp: { op: 'replace', startSeq: shadowed[0], endSeq: last },
-        sourceEventSeqs: shadowed,
-      });
-    } catch (error) {
-      throw new Error(`回退被内核拒绝：${error instanceof Error ? error.message : String(error)}`);
-    }
-    return { shadowed: shadowed.length, startSeq: shadowed[0], endSeq: last };
-  }
-
-  /**
    * Rewrite one draft into a clearer prompt.
    * @param {string} sessionId - addressed Session.
    * @param {string} text - current draft text.
@@ -468,7 +413,7 @@ Object.defineProperty(PromptOptimizerRemote.prototype, REMOTE_METHOD_DESCRIPTOR,
   value: Object.freeze({
     version: 1,
     methods: Object.freeze(
-      ['optimize', 'rewind', 'getSettings', 'setSettings'].map((method) =>
+      ['optimize', 'getSettings', 'setSettings'].map((method) =>
         Object.freeze({ method, invocation: Object.freeze({ kind: 'direct' }) }),
       ),
     ),

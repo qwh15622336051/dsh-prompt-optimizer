@@ -70,18 +70,6 @@ export const DESCRIPTORS = [
     result: codec('PromptOptimizeResult'),
   },
   {
-    id: `${PACKAGE}#${NAMESPACE}/rewind`,
-    namespace: NAMESPACE,
-    service: NAMESPACE,
-    method: 'rewind',
-    invocation: { kind: 'direct' },
-    parameters: [
-      parameter('sessionId', 'Session whose model-visible surface is cut back.'),
-      parameter('targetSeq', 'Seq of the user message to cut back to, exclusive of it.'),
-    ],
-    result: codec('PromptOptimizeRewindResult'),
-  },
-  {
     id: `${PACKAGE}#${NAMESPACE}/getSettings`,
     namespace: NAMESPACE,
     service: NAMESPACE,
