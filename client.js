@@ -644,61 +644,6 @@ window.__ModuleLoader__.load({
         h(NumberField, { id: 'dspo-reffile', label: t('maxReferenceFileChars'), value: values.maxReferenceFileChars, min: 0, max: 200000, disabled: busy, onChange: (value) => set('maxReferenceFileChars', value) }),
         h(NumberField, { id: 'dspo-reftotal', label: t('maxReferenceTotalChars'), value: values.maxReferenceTotalChars, min: 0, max: 400000, disabled: busy, onChange: (value) => set('maxReferenceTotalChars', value) }),
 
-        h('h3', { className: 'dspo-subtitle' }, t('retractSection')),
-        h(ToggleField, {
-          id: 'dspo-retract',
-          label: t('enableRetract'),
-          beta: true,
-          betaLabel: t('beta'),
-          checked: values.enableRetract,
-          disabled: busy,
-          onChange: (value) => set('enableRetract', value),
-        }),
-        h(ToggleField, {
-          id: 'dspo-edit',
-          label: t('enableEdit'),
-          beta: true,
-          betaLabel: t('beta'),
-          checked: values.enableEdit,
-          disabled: busy,
-          onChange: (value) => set('enableEdit', value),
-        }),
-        h(ToggleField, {
-          id: 'dspo-refill',
-          label: t('rollbackRefillDraft'),
-          checked: values.rollbackRefillDraft,
-          disabled: busy,
-          onChange: (value) => set('rollbackRefillDraft', value),
-        }),
-        h('p', { className: 'dspo-muted' }, t('betaNote')),
-
-        rollbackLog.length > 0
-          ? h(
-              'div',
-              { className: 'dspo-warn' },
-              h('strong', null, t('rollbackLogTitle')),
-              h(
-                'ul',
-                null,
-                rollbackLog.map((entry, index) =>
-                  h('li', { key: `${entry.time}-${index}` }, entry.message),
-                ),
-              ),
-              h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'dspo-btn',
-                  onClick: () => {
-                    rollbackLog.length = 0;
-                    setNotice(t('rollbackLogClear'));
-                  },
-                },
-                t('rollbackLogClear'),
-              ),
-            )
-          : null,
-
         error !== '' ? h('p', { className: 'dspo-error', role: 'alert' }, error) : null,
         notice !== '' ? h('p', { className: 'dspo-notice', role: 'status' }, notice) : null,
 
@@ -1960,37 +1905,6 @@ window.__ModuleLoader__.load({
         ),
       );
 
-      // Retract / edit sit on the user's own messages, so they shadow the
-      // shipped `user` chat node. A client without the session services simply
-      // never gets the controls.
-      ctx.inject(['sessions'], (child) => {
-        const sessions = child.sessions;
-        const uiWorkspace = child.get('uiWorkspace');
-        const conversationInput = child.get('conversation')?.input;
-        // The durable user message and the pending steering bubble render through
-        // the same shipped component, so both keys are shadowed.
-        for (const key of ['user', 'steering']) {
-          child.slots.inject('conversation.chat.node', () =>
-            child.slots.register(
-              {
-                name: 'conversation.chat.node',
-                key,
-                priority: nextShadowPriority(child.slots, 'conversation.chat.node', key),
-                inject: () => ({
-                  sessions,
-                  uiWorkspace,
-                  conversationInput,
-                  remote,
-                  sessionRemote: child.get('remote.session'),
-                  permissionRemote: child.get('remote.permissionPresets'),
-                  tr: t,
-                }),
-              },
-              UserMessageWithRecall,
-            ),
-          );
-        }
-      });
     }
 
     // Pure helpers exposed for the Node test suite. The module loader ignores

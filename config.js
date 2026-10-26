@@ -68,15 +68,6 @@ export const SETTINGS_SCHEMA = Schema.object({
     .step(1)
     .default(32000)
     .description('所有引用内容合计的最大字符数。'),
-  enableRetract: Schema.boolean()
-    .default(false)
-    .description('[BETA] 允许撤回已发送的消息：对话回到那条消息之前，原会话归档保留、可找回。默认关闭。'),
-  enableEdit: Schema.boolean()
-    .default(false)
-    .description('[BETA] 允许编辑最后一条消息：对话回到那条消息之前，原文回填输入框，改完重发。默认关闭。'),
-  rollbackRefillDraft: Schema.boolean()
-    .default(true)
-    .description('撤回 / 编辑后，把被回退消息的原文回填到输入框。'),
 });
 
 /** Live configuration reference injected into the plugin entry. */
@@ -94,9 +85,6 @@ export const CONFIG_KEYS = [
   'includeReferenceContent',
   'maxReferenceFileChars',
   'maxReferenceTotalChars',
-  'enableRetract',
-  'enableEdit',
-  'rollbackRefillDraft',
 ];
 
 /** Unwrap a schemastery volatile reference into its current plain value. */
