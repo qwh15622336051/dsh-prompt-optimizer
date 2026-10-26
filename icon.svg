@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Prompt optimizer">
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#3B6FE0"/>
+  <path d="M43 12.5 41 18l-5.5 2 5.5 2 2 5.5 2-5.5 5.5-2-5.5-2-2-5.5Z" fill="#FFD466"/>
+  <path d="M26.5 24.5 14 37a5.5 5.5 0 0 0 0 7.8l2.2 2.2a5.5 5.5 0 0 0 7.8 0L36.5 34.5l-10-10Z"
+        fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M22 18.5 20.6 22 17 23.4l3.6 1.4L22 28.4l1.4-3.6L27 23.4 23.4 22 22 18.5Z" fill="#FFFFFF" opacity="0.85"/>
+</svg>
