@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "提示词优化",
-    "description": "在输入框发送键旁提供一键优化提示词的按钮：把大白话改写成清晰、可执行的提示词，可自选 DeepSeek Harness 中已配置的模型，改写指令整段可自定义。"
+    "title": "Prompt Optimizer",
+    "description": "Adds a one-click button in the composer toolbar that rewrites a plain-language draft into a clear, actionable prompt, using any model already configured in DeepSeek Harness, with a fully editable rewriting instruction."
   }
 }
