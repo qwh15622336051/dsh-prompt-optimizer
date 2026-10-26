@@ -15,9 +15,6 @@
     "node": ">=20",
     "dsh": ">=0.2.0-rc.1 <0.3.0-0"
   },
-  "scripts": {
-    "test": "node --test"
-  },
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
