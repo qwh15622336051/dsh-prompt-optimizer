@@ -1,5 +1,5 @@
 {
-  "name": "dsh-prompt-optimizer",
+  "name": "@qwh15622336051/dsh-prompt-optimizer",
   "version": "1.0.0",
   "type": "module",
   "description": "DeepSeek Harness plugin: rewrite a plain-language draft into a precise prompt, using any model you have already configured",
@@ -65,5 +65,9 @@
   "homepage": "https://github.com/qwh15622336051/dsh-prompt-optimizer#readme",
   "bugs": {
     "url": "https://github.com/qwh15622336051/dsh-prompt-optimizer/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
