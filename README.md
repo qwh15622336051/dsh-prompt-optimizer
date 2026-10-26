@@ -1,79 +1,68 @@
-# 提示词优化 · Prompt Optimizer
+<h1 align="center">提示词优化 · Prompt Optimizer</h1>
 
-DeepSeek Harness 插件：在输入框发送键旁加一个「优化提示词」按钮。点一下，把你输入框里的大白话改写成清晰、具体、可执行的提示词，直接填回输入框。
+<p align="center">
+  <img src="icon.svg" width="96" height="96" alt="Prompt Optimizer">
+</p>
 
-**不会自动发送**，改成什么样你都能再编辑。
+<p align="center">
+  简体中文 · <a href="README.en.md">English</a>
+</p>
 
-## 功能
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/qwh15622336051/dsh-prompt-optimizer?style=flat-square" alt="license"></a>
+  <a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/DSH-0.2.1--rc.3-4176e6?style=flat-square" alt="DSH 0.2.1-rc.3"></a>
+  <a href="https://github.com/topics/dsh-plugin"><img src="https://img.shields.io/badge/topic-dsh--plugin-4176e6?style=flat-square" alt="topic dsh-plugin"></a>
+</p>
 
-- **一键优化**：按钮位于输入框工具栏右侧（模型选择器左边）。
-- **自选模型**：下拉框列出 DeepSeek Harness 中**已配置好**的厂商与模型；默认「跟随当前会话」。
-- **改写指令可自定义**：作为系统提示词发给优化模型的那段文字，整段可改，可恢复默认。
-- **读取 @ 引用内容**：草稿里的 `@文件` / `@文件夹` / `@会话` 会被读取内容并交给优化模型参考，让改写结果更具体。读取范围限于当前会话工作目录，且有单文件与总量上限。
-- **保留引用标记**：优化后 `@引用` 会原样放回输入框（保留为引用 chip），不会变成死文字。
-- **失败不动原稿**：模型报错、超时或返回空时，输入框内容一个字都不会变，只在按钮旁显示原因。
+在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的输入框里，把你随口说的大白话改写成清晰、具体、可执行的提示词。
 
-## 消息撤回 / 重新编辑
+点一下按钮，草稿被替换成改写结果；**不会自动发送**，你检查完再自己发。
 
-**不在本插件范围内。** 本插件只做提示词优化。
+## 它做什么
 
-需要撤回或重新编辑已发送的消息，请安装专用插件 [`dsh-easyrewrite`](https://www.npmjs.com/package/dsh-easyrewrite)（原位重编辑、无痕替换）：
+- **一键改写** —— 输入框工具栏右侧（模型选择器左边）一个按钮，对当前草稿做改写。
+- **模型你说了算** —— 从 DSH 中**已配置**的模型里挑，按厂商分组；也可以留空跟随当前会话。
+- **改写规则可整段替换** —— 发给模型的系统提示词就是一段可编辑文本，你可以完全换成自己的风格。
+- **会读你 @ 的东西** —— 草稿里的 `@文件`、`@文件夹`、`@会话` 会被读取内容交给改写器，让它知道实际涉及哪些代码。读取范围限于会话工作目录，并且有大小上限。
+
+## 安装
+
+本插件未发布到 npm，从仓库安装：
 
 ```sh
-dsh plugin add dsh-easyrewrite
+git clone https://github.com/qwh15622336051/dsh-prompt-optimizer
+dsh plugin add ./dsh-prompt-optimizer
 ```
+
+## 使用
+
+写好草稿 → 点工具栏里的魔棒按钮 → 一两秒后输入框内容被替换 → 检查后自己按发送。
+
+按钮在草稿为空、或输入框处于非普通状态（例如正在打斜杠命令）时不可点。改写失败会在按钮旁显示原因，**原草稿一个字都不会变**。
 
 ## 设置
 
-两个入口，同一套配置：
+入口：**设置 → 提示词优化**，或 **设置 → 插件 → 本插件所在行 → 配置**。
 
-- **设置 → 提示词优化**（左侧导航）
-- **设置 → 插件 → 本插件所在行 → 配置**
-
-可配置项：
-
-| 项 | 默认 | 说明 |
+| 设置项 | 默认 | 说明 |
 |---|---|---|
 | 启用优化按钮 | 开 | 关闭后按钮从输入框隐藏 |
-| 优化用的模型 | 跟随当前会话 | 只能是 Harness 中已配置的模型 |
+| 优化用的模型 | 跟随当前会话 | 只能选 DSH 中已配置的模型 |
 | 改写指令（系统提示词） | 内置模板 | 整段可改 |
-| 读取 @ 引用指向的内容 | 开 | 读取引用内容供模型参考 |
-| 最大输出 token | 2000 | |
+| 读取 @ 引用指向的内容 | 开 | 关闭则只依据你自己的文字改写 |
+| 最大输出 token | 2000 | 改写结果的长度上限 |
 | 超时（毫秒） | 30000 | |
-| 草稿字数上限 | 4000 | 超出时按钮不可用 |
-| 单文件读取上限（字符） | 8000 | 0 表示不读文件内容 |
-| 引用内容总量上限（字符） | 32000 | |
-
-配置写入本 profile 的 `cordis.patch.yml` 配置层（通过 DSH 设置服务），**插件升级不会覆盖你的配置**。也可以直接手改 `cordis.patch.yml` 的 `prompt-optimizer` 行。
-
-## 结构
-
-```
-package.json        包清单（dsh.bundle.patch + dsh.client）
-cordis.patch.yml    Loader 补丁：插入 prompt-optimizer 行
-index.js            Host 半：模型调用、引用内容读取、设置读写、Typert Remote 服务
-config.js           schemastery 配置 schema、默认改写指令、生效值读取
-contract.js         Host 侧 Remote 描述符（方法与参数）
-client.js           浏览器半：输入框按钮、设置页、Remote 挂载（零外部依赖）
-locale/{zh,en}.json 插件元数据（标题/描述），供插件管理器读取
-icon.svg            插件图标
-```
-
-## 实现要点
-
-- **桥接**：浏览器半用 `ctx.remote.$mount()` 挂载本包的 Typert 描述符，调用
-  `ctx.remote.promptOptimizer.{optimize,getSettings,setSettings}`。模型密钥始终留在 Host 侧。
-- **免装饰器**：Host 侧的 Remote 方法标记以字符串属性
-  `@deepseek-ai/dsh-typert-protocol/remote-methods` 直接写入原型，因此本插件是纯 JavaScript，
-  不需要 TypeScript 装饰器编译步骤。
-- **免 zod 上浏览器**：描述符里的 codec 只被 Gateway 校验 `mode === 'strict'`，
-  `create()` 是惰性路径。浏览器半使用自洽的 stub schema，Host 侧在方法内做显式校验。
-- **草稿写回**：`InputActions.setDraft(string)` 会清除引用 chip；需要保留 chip 时改用
-  语义文档形式 `setDraft({ text, references })`（运行时支持）。任何 chip 丢失时自动退回纯文本并提示。
+| 草稿字数上限 | 4000 | 超出时按钮不可点 |
+| 单文件读取上限（字符） | 8000 | 0 表示不读取文件内容 |
+| 引用内容总量上限（字符） | 32000 | 所有引用合计 |
 
 ## 已知边界
 
-- 按钮位置为输入框工具栏右侧（模型选择器左边）。紧贴发送键的那一格是单占位插槽，当前由语音输入
-  按钮占用，占用它会顶掉官方按钮，因此未采用。
-- 界面文案在插件加载时确定语言（跟随宿主语言），切换语言后刷新页面生效。
-- 优化请求作为辅助模型调用，不写入会话消息流。
+- 只改写草稿：**不自动发送**，也不会替你做别的决定。
+- 读取引用内容时**不会走出当前会话的工作目录**。
+- 改写是一次独立的模型调用，不写入对话记录；token 消耗按你选中的模型计。
+- 需要**撤回或重新编辑已发送的消息**？不在本插件范围内，请用 [`dsh-easyrewrite`](https://www.npmjs.com/package/dsh-easyrewrite)。
+
+## License
+
+[MIT](LICENSE)
