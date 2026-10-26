@@ -1620,6 +1620,35 @@ window.__ModuleLoader__.load({
        * Close the in-place editor, roll the conversation back to before this
        * message, and send the rewritten text as the new turn.
        */
+      /**
+       * Read the message's images into prompt content parts.
+       *
+       * `PromptContentPart` carries image bytes rather than attachment ids, so the
+       * originals are read back from the source session while it is still live.
+       * @returns {Promise<object[]>} the image parts that could be read.
+       */
+      async function readImageParts(ids) {
+        const parts = [];
+        if (!Array.isArray(ids) || ids.length === 0 || typeof sessionRemote?.attachment !== 'function') return parts;
+        for (const attachmentId of ids) {
+          try {
+            const read = await sessionRemote.attachment({ sessionId, attachmentId });
+            if (read?.ok !== true) continue;
+            const ref = read.value?.attachment ?? {};
+            if (typeof read.value?.data !== 'string' || typeof ref.mediaType !== 'string') continue;
+            parts.push({
+              type: 'image',
+              mediaType: ref.mediaType,
+              data: read.value.data,
+              ...(typeof ref.name === 'string' ? { name: ref.name } : {}),
+            });
+          } catch {
+            /* one unreadable image must not block the resend */
+          }
+        }
+        return parts;
+      }
+
       async function performEditSend(text, images) {
         if (typeof text !== 'string' || text.trim() === '') {
           setError(t('editEmpty'));
@@ -1632,39 +1661,38 @@ window.__ModuleLoader__.load({
           if (binding?.session?.getSnapshot?.()?.running) throw new Error(t('recallRunning'));
           if (seq === undefined || !isUserMessageSeq(binding, seq)) throw new Error(t('recallNoAnchor'));
 
+          const imageParts = await readImageParts(images);
+          if (Array.isArray(images) && images.length > 0 && imageParts.length === 0) {
+            recordRollbackError(t('recallImagesNotRestored'));
+          }
+
           const childId = await sessions.fork({ sessionId, atSeq: seq - 1, increaseTitle: true });
           const reference = sessions.retain(childId, { source: 'controllerOperation' });
-          let childCtx;
           try {
             const settled = await reference.ready;
-            childCtx = settled.ctx;
-            // Seed the text before navigation publishes the child, so the editor
-            // mounts already holding it.
-            const outcome = conversationInput?.requestDraftInitialization?.(settled, {
-              prompt: text,
-              whenDraftExists: 'replace',
-            });
-            if (outcome !== 'applied') setError(t('recallRefillFailed'));
+            // Send the rewritten turn right away. Seating it in the composer would
+            // make "save and resend" need a second, manual send.
+            const result = await settled.session.prompt([{ type: 'text', text }, ...imageParts], 'queue');
+            if (result?.ok !== true) {
+              const reason = result?.error?.message ?? t('editSendFailed');
+              // Never lose what the user typed: park it in the child's composer.
+              try {
+                conversationInput?.requestDraftInitialization?.(settled, {
+                  prompt: text,
+                  whenDraftExists: 'replace',
+                });
+              } catch {
+                /* the reported failure below is the actionable one */
+              }
+              setError(reason);
+              recordRollbackError(reason);
+            }
           } finally {
             reference.release?.();
           }
 
           setEditing(false);
           uiWorkspace?.openSession?.(childId);
-          // Images can only be appended to a mounted composer, so this runs after
-          // navigation has published the child. Best effort by design.
-          if (Array.isArray(images) && images.length > 0 && childCtx !== undefined) {
-            const attach = () => {
-              try {
-                conversationInput?.for?.(childCtx)?.addAttachments?.(images);
-              } catch (attachError) {
-                console.warn('[prompt-optimizer] carrying image attachments failed:', attachError);
-                recordRollbackError(t('recallImagesNotRestored'));
-              }
-            };
-            setTimeout(attach, 80);
-          }
-
           try {
             await uiWorkspace?.archiveSession?.(sessionId);
           } catch (archiveError) {
