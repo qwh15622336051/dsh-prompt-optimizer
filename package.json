@@ -60,5 +60,13 @@
     "react": {
       "optional": true
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qwh15622336051/dsh-prompt-optimizer.git"
+  },
+  "homepage": "https://github.com/qwh15622336051/dsh-prompt-optimizer#readme",
+  "bugs": {
+    "url": "https://github.com/qwh15622336051/dsh-prompt-optimizer/issues"
   }
 }
