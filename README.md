@@ -63,7 +63,6 @@ dsh plugin add @huanhuan123/dsh-prompt-optimizer
 - 读取引用内容时**不会走出当前会话的工作目录**。
 - 改写是一次独立的模型调用，不写入对话记录；token 消耗按你选中的模型计。
 - 改位置**即时生效**，不需要重载插件；颜色与大小也一样。
-- 需要**撤回或重新编辑已发送的消息**？不在本插件范围内，请用 [`dsh-easyrewrite`](https://www.npmjs.com/package/dsh-easyrewrite)。
 
 ## License
 

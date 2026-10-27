@@ -64,7 +64,6 @@ Open **Settings → 提示词优化**, or **Settings → Plugins → this plugin
 - Reference reads **never leave the current session working directory**.
 - The rewrite is a separate model call and is not written into the conversation record; its tokens are billed against the model you selected.
 - Position changes take effect **immediately**, no plugin reload; so do colour and size.
-- Looking for **message recall or re-editing of sent messages**? Out of scope here — use [`dsh-easyrewrite`](https://www.npmjs.com/package/dsh-easyrewrite).
 
 ## License
 
