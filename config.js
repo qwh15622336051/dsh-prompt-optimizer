@@ -69,7 +69,7 @@ export const SETTINGS_SCHEMA = Schema.object({
     .default(32000)
     .description('所有引用内容合计的最大字符数。'),
   buttonSlot: Schema.union(
-    [['right', '右工具栏（模型选择器左边）'], ['left', '左工具栏'], ['dock', '输入框下方独立一行']].map(([value]) =>
+    [['right', '右工具栏（模型选择器左边）'], ['left', '左工具栏']].map(([value]) =>
       Schema.const(value),
     ),
   )

@@ -100,7 +100,6 @@ window.__ModuleLoader__.load({
         buttonSlot: '按钮位置',
         slotRight: '右工具栏（模型选择器左边）',
         slotLeft: '左工具栏',
-        slotDock: '输入框下方独立一行',
         buttonOrder: '同位置内排序（越小越靠左）',
         buttonColor: '图标颜色',
         buttonSize: '图标大小',
@@ -189,7 +188,6 @@ window.__ModuleLoader__.load({
         buttonSlot: 'Button position',
         slotRight: 'Right toolbar (left of the model selector)',
         slotLeft: 'Left toolbar',
-        slotDock: 'Its own row below the composer',
         buttonOrder: 'Order within that position (lower is further left)',
         buttonColor: 'Icon colour',
         buttonSize: 'Icon size',
@@ -254,21 +252,20 @@ window.__ModuleLoader__.load({
     /** Swatch order in the settings page. */
     const COLORS = ['theme', 'brand', 'label', 'success', 'warn', 'error', 'idle'];
 
-    /** Icon sizes in pixels; the glyph keeps its ratio to the hit area. */
-    const BUTTON_SIZE_PX = { sm: 24, md: 28, lg: 34 };
+    /** Icon sizes in pixels. The glyph is sized directly; the hit area follows it. */
+    const BUTTON_SIZE_PX = { sm: 14, md: 16, lg: 20 };
 
     /** Seat key to SlotMap key. */
     const BUTTON_SLOTS = {
       right: 'conversation.input.right',
       left: 'conversation.input.left',
-      dock: 'conversation.composer.dock',
     };
 
     /** Composer button glyph: a wand with a spark. */
     function WandIcon() {
       return h(
         'svg',
-        { viewBox: '0 0 16 16', width: 16, height: 16, 'aria-hidden': true, focusable: false },
+        { viewBox: '0 0 16 16', 'aria-hidden': true, focusable: false, className: 'dspo-glyph' },
         h('path', {
           d: 'M9.6 1.6 8.9 3.4 7.1 4.1l1.8.7.7 1.8.7-1.8 1.8-.7-1.8-.7-.7-1.8Z',
           fill: 'currentColor',
@@ -292,7 +289,7 @@ window.__ModuleLoader__.load({
 
     /** Indeterminate busy ring. */
     function Spinner() {
-      return h('span', { className: 'dspo-spinner', 'aria-hidden': true });
+      return h('span', { className: 'dspo-spinner dspo-glyph', 'aria-hidden': true });
     }
 
     /**
@@ -447,6 +444,7 @@ window.__ModuleLoader__.load({
               '--dspo-icon-color': BUTTON_COLOR_TOKENS[limits?.buttonColor] ?? BUTTON_COLOR_TOKENS.theme,
               '--dspo-icon-size': `${BUTTON_SIZE_PX[limits?.buttonSize] ?? BUTTON_SIZE_PX.md}px`,
             },
+            'data-size': limits?.buttonSize ?? 'md',
             'data-busy': busy,
             'aria-busy': busy,
             'aria-label': t('buttonTitle'),
@@ -669,7 +667,6 @@ window.__ModuleLoader__.load({
             },
             h('option', { value: 'right' }, t('slotRight')),
             h('option', { value: 'left' }, t('slotLeft')),
-            h('option', { value: 'dock' }, t('slotDock')),
           ),
         ),
         h(NumberField, {
@@ -772,8 +769,10 @@ window.__ModuleLoader__.load({
 
     const CSS = `
 .dspo-slot{display:inline-flex;align-items:center;gap:6px;flex:none}
-.dspo-trigger{display:inline-flex;align-items:center;justify-content:center;width:var(--dspo-icon-size,28px);height:var(--dspo-icon-size,28px);min-height:var(--dspo-icon-size,28px);padding:0;border:0;border-radius:50%;background:transparent;color:var(--dspo-icon-color,var(--dsw-alias-label-secondary));cursor:pointer;flex:none;transition:background-color 120ms ease,color 120ms ease}
-.dspo-trigger svg{width:calc(var(--dspo-icon-size,28px) * .57);height:calc(var(--dspo-icon-size,28px) * .57)}
+.dspo-trigger{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;min-height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dspo-icon-color,var(--dsw-alias-label-secondary));cursor:pointer;flex:none;transition:background-color 120ms ease,color 120ms ease}
+.dspo-trigger[data-size=sm]{width:24px;height:24px;min-height:24px}
+.dspo-trigger[data-size=lg]{width:34px;height:34px;min-height:34px}
+.dspo-glyph{width:var(--dspo-icon-size,16px);height:var(--dspo-icon-size,16px);display:block}
 .dspo-swatches{display:flex;flex-wrap:wrap;gap:8px}
 .dspo-swatch{width:26px;height:26px;padding:0;border:2px solid transparent;border-radius:50%;background-clip:content-box;cursor:pointer}
 .dspo-swatch[data-active=true]{border-color:var(--dsw-alias-label-primary)}

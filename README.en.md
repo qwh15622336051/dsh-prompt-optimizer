@@ -53,7 +53,7 @@ Open **Settings → 提示词优化**, or **Settings → Plugins → this plugin
 | Draft character limit | 4000 | Beyond it the button is disabled |
 | Per-file read limit (characters) | 8000 | 0 means file content is not read |
 | Total reference content limit (characters) | 32000 | Across all references |
-| Button position | right toolbar | Right toolbar / left toolbar / its own row below the composer |
+| Button position | right toolbar | Right toolbar / left toolbar |
 | Order within that position | 40 | Lower is further left, to avoid other plugins in the same seat |
 | Icon colour | follow the theme | Seven presets, all taken from the host theme tokens |
 | Icon size | medium | Small / medium / large |
