@@ -68,6 +68,37 @@ export const SETTINGS_SCHEMA = Schema.object({
     .step(1)
     .default(32000)
     .description('所有引用内容合计的最大字符数。'),
+  buttonSlot: Schema.union(
+    [['right', '右工具栏（模型选择器左边）'], ['left', '左工具栏'], ['dock', '输入框下方独立一行']].map(([value]) =>
+      Schema.const(value),
+    ),
+  )
+    .default('right')
+    .description('优化按钮放在输入框工具栏的哪个位置。'),
+  buttonOrder: Schema.number()
+    .min(-100)
+    .max(100)
+    .step(1)
+    .default(40)
+    .description('同一位置内的排序，越小越靠左。用来避开同位置的其它插件。'),
+  buttonColor: Schema.union(
+    [
+      ['theme', '跟随主题'],
+      ['brand', '品牌蓝'],
+      ['label', '主文字色'],
+      ['success', '成功绿'],
+      ['warn', '警告黄'],
+      ['error', '错误红'],
+      ['idle', '中性灰'],
+    ].map(([value]) => Schema.const(value)),
+  )
+    .default('theme')
+    .description('图标颜色。只改常态，处理中与禁用状态始终保持原有的反馈色。'),
+  buttonSize: Schema.union(
+    [['sm', '小'], ['md', '中'], ['lg', '大']].map(([value]) => Schema.const(value)),
+  )
+    .default('md')
+    .description('图标大小。'),
 });
 
 /** Live configuration reference injected into the plugin entry. */
@@ -85,6 +116,10 @@ export const CONFIG_KEYS = [
   'includeReferenceContent',
   'maxReferenceFileChars',
   'maxReferenceTotalChars',
+  'buttonSlot',
+  'buttonOrder',
+  'buttonColor',
+  'buttonSize',
 ];
 
 /** Unwrap a schemastery volatile reference into its current plain value. */

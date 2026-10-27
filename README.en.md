@@ -53,12 +53,17 @@ Open **Settings → 提示词优化**, or **Settings → Plugins → this plugin
 | Draft character limit | 4000 | Beyond it the button is disabled |
 | Per-file read limit (characters) | 8000 | 0 means file content is not read |
 | Total reference content limit (characters) | 32000 | Across all references |
+| Button position | right toolbar | Right toolbar / left toolbar / its own row below the composer |
+| Order within that position | 40 | Lower is further left, to avoid other plugins in the same seat |
+| Icon colour | follow the theme | Seven presets, all taken from the host theme tokens |
+| Icon size | medium | Small / medium / large |
 
 ## Known limits
 
 - It only rewrites the draft: it **never sends**, and makes no other decision for you.
 - Reference reads **never leave the current session working directory**.
 - The rewrite is a separate model call and is not written into the conversation record; its tokens are billed against the model you selected.
+- Position changes take effect **immediately**, no plugin reload; so do colour and size.
 - Looking for **message recall or re-editing of sent messages**? Out of scope here — use [`dsh-easyrewrite`](https://www.npmjs.com/package/dsh-easyrewrite).
 
 ## License

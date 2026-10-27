@@ -95,6 +95,18 @@ window.__ModuleLoader__.load({
         failures: '以下厂商当前不可用',
         prompt: '改写指令（系统提示词）',
         promptHint: '这段文字会作为系统提示词发给优化模型。可整段改成你自己的风格。',
+        appearance: '按钮外观',
+        appearanceNote: '颜色只改常态；处理中与禁用状态始终保持原有的反馈色。位置改动即时生效，不需要重载插件。',
+        buttonSlot: '按钮位置',
+        slotRight: '右工具栏（模型选择器左边）',
+        slotLeft: '左工具栏',
+        slotDock: '输入框下方独立一行',
+        buttonOrder: '同位置内排序（越小越靠左）',
+        buttonColor: '图标颜色',
+        buttonSize: '图标大小',
+        sizeSm: '小', sizeMd: '中', sizeLg: '大',
+        colorTheme: '跟随主题', colorBrand: '品牌蓝', colorLabel: '主文字色',
+        colorSuccess: '成功绿', colorWarn: '警告黄', colorError: '错误红', colorIdle: '中性灰',
         limits: '请求限制',
         enabled: '启用优化按钮',
         includeReferences: '读取 @ 引用指向的内容',
@@ -115,7 +127,6 @@ window.__ModuleLoader__.load({
         loadFailed: '无法读取配置，请检查连接后重试。',
         beta: 'BETA',
         retractSection: '消息撤回与编辑',
-        betaNote: '标有 BETA 的功能为测试版，会改写对话记录。两项默认关闭。',
         enableRetract: '允许撤回已发送的消息',
         enableEdit: '允许编辑最后一条消息',
         rollbackRefillDraft: '撤回 / 编辑后把原文回填输入框',
@@ -173,6 +184,18 @@ window.__ModuleLoader__.load({
         failures: 'Currently unavailable providers',
         prompt: 'Rewriting instruction (system prompt)',
         promptHint: 'Sent as the system prompt of the optimization call. Replace it wholesale if you like.',
+        appearance: 'Button appearance',
+        appearanceNote: 'Colour applies to the resting state only; the busy and disabled states keep their own feedback colours. Seat changes take effect immediately, no reload needed.',
+        buttonSlot: 'Button position',
+        slotRight: 'Right toolbar (left of the model selector)',
+        slotLeft: 'Left toolbar',
+        slotDock: 'Its own row below the composer',
+        buttonOrder: 'Order within that position (lower is further left)',
+        buttonColor: 'Icon colour',
+        buttonSize: 'Icon size',
+        sizeSm: 'Small', sizeMd: 'Medium', sizeLg: 'Large',
+        colorTheme: 'Follow the theme', colorBrand: 'Brand blue', colorLabel: 'Primary text',
+        colorSuccess: 'Success green', colorWarn: 'Warning yellow', colorError: 'Error red', colorIdle: 'Neutral grey',
         limits: 'Request limits',
         enabled: 'Enable the optimize button',
         includeReferences: 'Read the content behind @ references',
@@ -193,7 +216,6 @@ window.__ModuleLoader__.load({
         loadFailed: 'Could not read the configuration. Check the connection and retry.',
         beta: 'BETA',
         retractSection: 'Message retract and edit',
-        betaNote: 'Entries marked BETA are experimental and rewrite the conversation record. Both are off by default.',
         enableRetract: 'Allow retracting sent messages',
         enableEdit: 'Allow editing the last message',
         rollbackRefillDraft: 'Put the original text back into the composer',
@@ -217,6 +239,30 @@ window.__ModuleLoader__.load({
      * again, resolve this per call from `ctx.get('locale')`.
      */
     const UI_LANG = 'zh';
+
+    /** Icon colours, each an official theme token so both themes stay legible. */
+    const BUTTON_COLOR_TOKENS = {
+      theme: 'var(--dsw-alias-label-secondary)',
+      brand: 'var(--dsw-alias-brand-primary)',
+      label: 'var(--dsw-alias-label-primary)',
+      success: 'var(--dsw-alias-state-success-primary)',
+      warn: 'var(--dsw-alias-state-warn-primary)',
+      error: 'var(--dsw-alias-state-error-primary)',
+      idle: 'var(--dsw-alias-state-idle-primary)',
+    };
+
+    /** Swatch order in the settings page. */
+    const COLORS = ['theme', 'brand', 'label', 'success', 'warn', 'error', 'idle'];
+
+    /** Icon sizes in pixels; the glyph keeps its ratio to the hit area. */
+    const BUTTON_SIZE_PX = { sm: 24, md: 28, lg: 34 };
+
+    /** Seat key to SlotMap key. */
+    const BUTTON_SLOTS = {
+      right: 'conversation.input.right',
+      left: 'conversation.input.left',
+      dock: 'conversation.composer.dock',
+    };
 
     /** Composer button glyph: a wand with a spark. */
     function WandIcon() {
@@ -397,6 +443,10 @@ window.__ModuleLoader__.load({
           {
             type: 'button',
             className: 'dspo-trigger',
+            style: {
+              '--dspo-icon-color': BUTTON_COLOR_TOKENS[limits?.buttonColor] ?? BUTTON_COLOR_TOKENS.theme,
+              '--dspo-icon-size': `${BUTTON_SIZE_PX[limits?.buttonSize] ?? BUTTON_SIZE_PX.md}px`,
+            },
             'data-busy': busy,
             'aria-busy': busy,
             'aria-label': t('buttonTitle'),
@@ -604,6 +654,73 @@ window.__ModuleLoader__.load({
           h('small', null, t('promptHint')),
         ),
 
+        h('h3', { className: 'dspo-subtitle' }, t('appearance')),
+        h(
+          'div',
+          { className: 'dspo-field' },
+          h('label', { htmlFor: 'dspo-slot' }, t('buttonSlot')),
+          h(
+            'select',
+            {
+              id: 'dspo-slot',
+              value: values.buttonSlot ?? 'right',
+              disabled: busy,
+              onChange: (event) => set('buttonSlot', event.target.value),
+            },
+            h('option', { value: 'right' }, t('slotRight')),
+            h('option', { value: 'left' }, t('slotLeft')),
+            h('option', { value: 'dock' }, t('slotDock')),
+          ),
+        ),
+        h(NumberField, {
+          id: 'dspo-order',
+          label: t('buttonOrder'),
+          value: values.buttonOrder,
+          min: -100,
+          max: 100,
+          disabled: busy,
+          onChange: (value) => set('buttonOrder', value),
+        }),
+        h(
+          'div',
+          { className: 'dspo-field' },
+          h('label', null, t('buttonColor')),
+          h(
+            'div',
+            { className: 'dspo-swatches' },
+            COLORS.map((key) =>
+              h('button', {
+                key,
+                type: 'button',
+                className: 'dspo-swatch',
+                'data-active': (values.buttonColor ?? 'theme') === key ? 'true' : undefined,
+                title: t(`color${key[0].toUpperCase()}${key.slice(1)}`),
+                'aria-label': t(`color${key[0].toUpperCase()}${key.slice(1)}`),
+                style: { background: BUTTON_COLOR_TOKENS[key] },
+                onClick: () => set('buttonColor', key),
+              }),
+            ),
+          ),
+        ),
+        h(
+          'div',
+          { className: 'dspo-field' },
+          h('label', { htmlFor: 'dspo-size' }, t('buttonSize')),
+          h(
+            'select',
+            {
+              id: 'dspo-size',
+              value: values.buttonSize ?? 'md',
+              disabled: busy,
+              onChange: (event) => set('buttonSize', event.target.value),
+            },
+            h('option', { value: 'sm' }, t('sizeSm')),
+            h('option', { value: 'md' }, t('sizeMd')),
+            h('option', { value: 'lg' }, t('sizeLg')),
+          ),
+        ),
+        h('p', { className: 'dspo-muted' }, t('appearanceNote')),
+
         h('h3', { className: 'dspo-subtitle' }, t('limits')),
         h(ToggleField, {
           id: 'dspo-enabled',
@@ -655,7 +772,12 @@ window.__ModuleLoader__.load({
 
     const CSS = `
 .dspo-slot{display:inline-flex;align-items:center;gap:6px;flex:none}
-.dspo-trigger{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;min-height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;flex:none;transition:background-color 120ms ease,color 120ms ease}
+.dspo-trigger{display:inline-flex;align-items:center;justify-content:center;width:var(--dspo-icon-size,28px);height:var(--dspo-icon-size,28px);min-height:var(--dspo-icon-size,28px);padding:0;border:0;border-radius:50%;background:transparent;color:var(--dspo-icon-color,var(--dsw-alias-label-secondary));cursor:pointer;flex:none;transition:background-color 120ms ease,color 120ms ease}
+.dspo-trigger svg{width:calc(var(--dspo-icon-size,28px) * .57);height:calc(var(--dspo-icon-size,28px) * .57)}
+.dspo-swatches{display:flex;flex-wrap:wrap;gap:8px}
+.dspo-swatch{width:26px;height:26px;padding:0;border:2px solid transparent;border-radius:50%;background-clip:content-box;cursor:pointer}
+.dspo-swatch[data-active=true]{border-color:var(--dsw-alias-label-primary)}
+.dspo-swatch:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .dspo-trigger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .dspo-trigger:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
 .dspo-trigger:disabled{cursor:default;color:var(--dsw-alias-state-idle-primary);opacity:.55}
@@ -719,11 +841,62 @@ window.__ModuleLoader__.load({
 
       const face = () => ({ remote, t });
 
-      ctx.slots.inject('conversation.input.right', () =>
-        ctx.slots.register(
-          { name: 'conversation.input.right', id: ROW_ID, order: 40, inject: face },
-          OptimizeButton,
-        ),
+      // The button's seat and order come from the settings, so it is mounted
+      // through a re-mountable registration: change the setting and the entry
+      // moves, rather than waiting for a plugin reload.
+      let mounted = null;
+      const mountButton = (values) => {
+        const slot = BUTTON_SLOTS[values?.buttonSlot] ?? BUTTON_SLOTS.right;
+        const order = Number.isInteger(values?.buttonOrder) ? values.buttonOrder : 40;
+        if (mounted !== null && mounted.slot === slot && mounted.order === order) return;
+        const previous = mounted;
+        mounted = null;
+        try {
+          previous?.dispose?.();
+        } catch {
+          /* the old registration is already gone */
+        }
+        try {
+          mounted = { slot, order, dispose: seat(slot, order) };
+        } catch (error) {
+          console.warn('[prompt-optimizer] could not move the button:', error);
+          // Roll back to the previous seat rather than leaving no button at all.
+          if (previous !== null) {
+            try {
+              mounted = { slot: previous.slot, order: previous.order, dispose: seat(previous.slot, previous.order) };
+            } catch {
+              /* nothing else to try */
+            }
+          }
+        }
+      };
+      const seat = (slot, order) =>
+        ctx.slots.inject(slot, () => ctx.slots.register({ name: slot, id: ROW_ID, order, inject: face }, OptimizeButton));
+
+      const refreshSeat = () => {
+        remote
+          .getSettings()
+          .then((result) => {
+            if (result?.ok) mountButton(result.value.values);
+          })
+          .catch(() => {});
+      };
+      refreshSeat();
+      try {
+        ctx.effect(() => ctx.remote.$on('settings/document-updated', refreshSeat), 'prompt-optimizer: seat settings');
+      } catch (error) {
+        // Older clients do not forward this event; the seat still applies on reload.
+        console.warn('[prompt-optimizer] live seat updates unavailable:', error);
+      }
+      ctx.effect(
+        () => () => {
+          try {
+            mounted?.dispose?.();
+          } catch {
+            /* already disposed */
+          }
+        },
+        'prompt-optimizer: button seat',
       );
 
       ctx.slots.inject('plugins.row.config', () =>
