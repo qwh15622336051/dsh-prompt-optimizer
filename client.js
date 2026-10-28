@@ -130,48 +130,6 @@ window.__ModuleLoader__.load({
         dirty: '有未保存的修改',
         synced: '配置已同步',
         loadFailed: '无法读取配置，请检查连接后重试。',
-        beta: 'BETA',
-        retractSection: '消息撤回与编辑',
-        enableRetract: '允许撤回已发送的消息',
-        enableEdit: '允许编辑最后一条消息',
-        rollbackRefillDraft: '撤回 / 编辑后把原文回填输入框',
-        recallRetract: '撤回',
-        recallRetractHint: '撤回这条消息：对话回到它发送之前，原会话归档保留',
-        recallEdit: '编辑',
-        recallEditHint: '编辑最后一条消息：对话回到它发送之前，原文回填输入框',
-        recallConfirm: '确定要撤回这条消息吗？\n\n对话会回到这条消息发送之前，被替换的原会话会归档保留（可在会话列表找回）。此操作不可撤销。',
-        recallRunning: '当前回合正在运行，请先停止再撤回。',
-        recallFailed: '撤回失败',
-        recallCannotFork: '这是会话的第一条消息，没有更早的切点可以回退。',
-        recallNoAnchor: '无法确认这条消息在会话中的位置，已取消撤回（不会盲目回退）。',
-        copy: '复制',
-        copied: '已复制',
-        editHint: '改完按 Enter 或点「保存并重发」：对话回到这条之前，然后用新内容重新发送。Esc 取消。',
-        cancelEdit: '取消',
-        saveAndResend: '保存并重发',
-        saving: '处理中…',
-        editSendFailed: '已回退对话，但重新发送失败，请手动发送。',
-        editEmpty: '内容为空，无法重发。',
-        model: '模型',
-        reasoning: '推理等级',
-        permission: '权限',
-        permissionFailed: '切换权限失败。',
-        permissionUnavailable: '宿主没有提供 /permission 命令。',
-        permissionNoSession: '会话尚未就绪，无法切换权限。',
-        permissionRisk: '「完全访问」会放开沙箱限制。确定切换吗？',
-        permissionConfirm: '确认切换',
-        attach: '附件',
-        followSession: '跟随当前会话',
-        modelUnavailable: '模型目录不可用',
-        attachmentsCarried: (n) => `${n} 个附件会一并带入新会话`,
-        filesNotCarried: '文件附件不会带入新会话（官方接口只支持图片），请重新选择。',
-        editSeeded: '对话已回退，改后的内容与图片已放进新会话的输入框，按回车发送即可。',
-        confirm: '确定撤回',
-        cancel: '取消',
-        recallRefillFailed: '原文未能自动回填输入框，请手动重新输入（原会话已归档，可在会话列表找回）。',
-        recallImagesNotRestored: '图片附件未能自动恢复，请重新添加。',
-        recallFilesNotRestored: '文件附件无法自动恢复（DSH 官方接口只支持读回图片），请重新选择文件。',
-        recallArchiveFailed: '对话已回退，但原会话归档失败——会话列表里会同时看到新旧两个会话。',
       },
       en: {
         buttonTitle: 'Optimize prompt',
@@ -181,6 +139,7 @@ window.__ModuleLoader__.load({
         buttonLocked: 'Optimizing is unavailable in the current input state',
         failed: 'Optimization failed',
         droppedReference: 'Optimized, but a reference marker was not preserved; the draft was replaced as plain text.',
+        chipsNotPreserved: 'The result could not be written into the composer at first; it was retried as plain text (reference markers may be lost).',
         settingsTitle: 'Prompt optimizer',
         settingsSummary: 'Adds a one-click prompt-rewriting button beside the composer send control.',
         model: 'Model used for optimization',
@@ -224,19 +183,6 @@ window.__ModuleLoader__.load({
         dirty: 'Unsaved changes',
         synced: 'Configuration synced',
         loadFailed: 'Could not read the configuration. Check the connection and retry.',
-        beta: 'BETA',
-        retractSection: 'Message retract and edit',
-        enableRetract: 'Allow retracting sent messages',
-        enableEdit: 'Allow editing the last message',
-        rollbackRefillDraft: 'Put the original text back into the composer',
-        recallRetract: 'Retract',
-        recallRetractHint: 'Retract this message: the conversation returns to before it was sent, and the replaced session is archived',
-        recallEdit: 'Edit',
-        recallEditHint: 'Edit the last message: the conversation returns to before it was sent and the text returns to the composer',
-        recallConfirm: 'Retract this message?\n\nThe conversation returns to before it was sent and the replaced session is archived (recoverable from the session list). This cannot be undone.',
-        recallRunning: 'The current turn is running. Stop it before retracting.',
-        recallFailed: 'Retract failed',
-        recallCannotFork: 'This is the first message of the session, so there is no earlier point to return to.',
       },
     };
 
@@ -612,9 +558,9 @@ window.__ModuleLoader__.load({
       );
     }
 
-    /** One labelled checkbox row, optionally tagged as experimental. */
+    /** One labelled checkbox row. */
     function ToggleField(props) {
-      const { id, label, hint, checked, disabled, onChange, beta, betaLabel } = props;
+      const { id, label, hint, checked, disabled, onChange } = props;
       return h(
         'div',
         { className: 'dspo-field' },
@@ -629,7 +575,6 @@ window.__ModuleLoader__.load({
             onChange: (event) => onChange(event.target.checked),
           }),
           h('span', null, label),
-          beta === true ? h('span', { className: 'dspo-beta' }, betaLabel) : null,
         ),
         hint === undefined ? null : h('small', null, hint),
       );
@@ -1044,15 +989,6 @@ window.__ModuleLoader__.load({
       );
 
     }
-
-    // Pure helpers exposed for the Node test suite. The module loader ignores
-    // extra keys, so this costs nothing at runtime.
-    return {
-      inject,
-      apply,
-      __internals: {
-        DESCRIPTORS,
-      },
-    };
+    return { inject, apply };
   },
 });
