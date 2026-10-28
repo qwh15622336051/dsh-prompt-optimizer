@@ -80,7 +80,7 @@ window.__ModuleLoader__.load({
     const DICTS = {
       zh: {
         buttonTitle: '优化提示词',
-        buttonBusy: '正在优化提示词…',
+        buttonBusy: '正在处理…',
         buttonEmpty: '先输入内容，再点优化',
         buttonTooLong: (n) => `草稿超过 ${n} 字上限`,
         buttonLocked: '当前输入状态不支持优化',
@@ -95,6 +95,7 @@ window.__ModuleLoader__.load({
         failures: '以下厂商当前不可用',
         prompt: '改写指令（系统提示词）',
         promptHint: '这段文字会作为系统提示词发给优化模型。可整段改成你自己的风格。',
+        revertTip: '撤销',
         revertTitle: '撤销优化，恢复我原来的输入',
         revertConfirm: '再点一次确认撤销（会丢弃你对优化结果的修改）',
         revertConfirmShort: '确认撤销',
@@ -174,7 +175,7 @@ window.__ModuleLoader__.load({
       },
       en: {
         buttonTitle: 'Optimize prompt',
-        buttonBusy: 'Optimizing prompt…',
+        buttonBusy: 'Working…',
         buttonEmpty: 'Type something first',
         buttonTooLong: (n) => `Draft exceeds the ${n} character limit`,
         buttonLocked: 'Optimizing is unavailable in the current input state',
@@ -188,6 +189,7 @@ window.__ModuleLoader__.load({
         failures: 'Currently unavailable providers',
         prompt: 'Rewriting instruction (system prompt)',
         promptHint: 'Sent as the system prompt of the optimization call. Replace it wholesale if you like.',
+        revertTip: 'Undo',
         revertTitle: 'Undo the rewrite and restore your own text',
         revertConfirm: 'Click again to confirm — this discards your edits to the rewrite',
         revertConfirmShort: 'Confirm',
@@ -438,11 +440,14 @@ window.__ModuleLoader__.load({
       const hidden = limits !== null && limits.enabled === false;
       const disabled = busy || text.trim() === '' || phase !== 'plain' || tooLong;
 
-      let title = t('buttonTitle');
-      if (busy) title = t('buttonBusy');
-      else if (text.trim() === '') title = t('buttonEmpty');
-      else if (tooLong) title = t('buttonTooLong', cap);
-      else if (phase !== 'plain') title = t('buttonLocked');
+      // Always lead with what the button does; the state reason rides along so
+      // hovering an unavailable button still explains itself.
+      let reason = '';
+      if (busy) reason = t('buttonBusy');
+      else if (text.trim() === '') reason = t('buttonEmpty');
+      else if (tooLong) reason = t('buttonTooLong', cap);
+      else if (phase !== 'plain') reason = t('buttonLocked');
+      const title = reason === '' ? t('buttonTitle') : `${t('buttonTitle')} · ${reason}`;
 
       // An emptied draft (the message was sent) has nothing left to revert to.
       React.useEffect(() => {
@@ -528,8 +533,9 @@ window.__ModuleLoader__.load({
                   '--dspo-icon-size': `${BUTTON_SIZE_PX[limits?.buttonSize] ?? BUTTON_SIZE_PX.md}px`,
                 },
                 'data-size': limits?.buttonSize ?? 'md',
-                title: confirming ? t('revertConfirm') : t('revertTitle'),
+                title: confirming ? t('revertConfirm') : t('revertTip'),
                 'aria-label': confirming ? t('revertConfirm') : t('revertTitle'),
+                'data-tip': confirming ? t('revertConfirm') : t('revertTip'),
                 onMouseDown: (event) => event.preventDefault(),
                 onClick: () => onRevert(),
               },
@@ -551,6 +557,7 @@ window.__ModuleLoader__.load({
             'data-busy': busy,
             'aria-busy': busy,
             'aria-label': t('buttonTitle'),
+            'data-tip': title,
             title,
             disabled,
             onMouseDown: (event) => event.preventDefault(),
@@ -883,6 +890,9 @@ window.__ModuleLoader__.load({
 .dspo-trigger{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;min-height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dspo-icon-color,var(--dsw-alias-label-secondary));cursor:pointer;flex:none;transition:background-color 120ms ease,color 120ms ease}
 .dspo-trigger[data-size=sm]{width:24px;height:24px;min-height:24px}
 .dspo-trigger[data-size=lg]{width:34px;height:34px;min-height:34px}
+.dspo-trigger{position:relative}
+.dspo-trigger[data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);padding:3px 7px;border-radius:6px;background:var(--dsw-alias-bg-elevated,var(--dsw-alias-bg-base,#2a2a2e));color:var(--dsw-alias-label-primary,#f2f2f2);border:1px solid var(--dsw-alias-line-secondary,rgb(128 128 128 / 28%));box-shadow:var(--dsw-elevation-soft,0 2px 8px rgb(0 0 0 / 20%));font-size:11px;font-weight:400;line-height:1.4;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 100ms ease;z-index:40}
+.dspo-trigger[data-tip]:hover::after,.dspo-trigger[data-tip]:focus-visible::after{opacity:1}
 .dspo-revert[data-confirm=true]{width:auto;min-width:28px;padding:0 8px;border-radius:14px}
 .dspo-revert-label{font-size:12px;line-height:1;white-space:nowrap}
 .dspo-glyph{width:var(--dspo-icon-size,16px);height:var(--dspo-icon-size,16px);display:block}
