@@ -95,6 +95,11 @@ window.__ModuleLoader__.load({
         failures: '以下厂商当前不可用',
         prompt: '改写指令（系统提示词）',
         promptHint: '这段文字会作为系统提示词发给优化模型。可整段改成你自己的风格。',
+        revertTitle: '撤销优化，恢复我原来的输入',
+        revertConfirm: '再点一次确认撤销（会丢弃你对优化结果的修改）',
+        revertConfirmShort: '确认撤销',
+        enableRevert: '允许撤销优化',
+        enableRevertHint: '优化后按钮旁出现撤销入口，一键恢复你自己敲的内容。',
         appearance: '按钮外观',
         appearanceNote: '颜色只改常态；处理中与禁用状态始终保持原有的反馈色。位置改动即时生效，不需要重载插件。',
         buttonSlot: '按钮位置',
@@ -183,6 +188,11 @@ window.__ModuleLoader__.load({
         failures: 'Currently unavailable providers',
         prompt: 'Rewriting instruction (system prompt)',
         promptHint: 'Sent as the system prompt of the optimization call. Replace it wholesale if you like.',
+        revertTitle: 'Undo the rewrite and restore your own text',
+        revertConfirm: 'Click again to confirm — this discards your edits to the rewrite',
+        revertConfirmShort: 'Confirm',
+        enableRevert: 'Allow undoing an optimization',
+        enableRevertHint: 'After a rewrite an undo control appears beside the button, restoring the text you wrote yourself.',
         appearance: 'Button appearance',
         appearanceNote: 'Colour applies to the resting state only; the busy and disabled states keep their own feedback colours. Seat changes take effect immediately, no reload needed.',
         buttonSlot: 'Button position',
@@ -260,6 +270,29 @@ window.__ModuleLoader__.load({
       right: 'conversation.input.right',
       left: 'conversation.input.left',
     };
+
+    /** Undo glyph: an arrow curving back to the left. */
+    function UndoIcon() {
+      return h(
+        'svg',
+        { viewBox: '0 0 16 16', 'aria-hidden': true, focusable: false, className: 'dspo-glyph' },
+        h('path', {
+          d: 'M3.4 6.6h5.9a3.5 3.5 0 0 1 0 7H6.6',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.7,
+          strokeLinecap: 'round',
+        }),
+        h('path', {
+          d: 'M5.8 3.4 2.6 6.6l3.2 3.2',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.7,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+        }),
+      );
+    }
 
     /** Composer button glyph: a wand with a spark. */
     function WandIcon() {
@@ -362,6 +395,10 @@ window.__ModuleLoader__.load({
       const [error, setError] = React.useState('');
       const [limits, setLimits] = React.useState(null);
       const [pending, setPending] = React.useState(null);
+      // The draft this button last rewrote, plus the user's own text from before
+      // the FIRST rewrite of the current draft, so repeated rewrites never lose it.
+      const [history, setHistory] = React.useState(null);
+      const [confirming, setConfirming] = React.useState(false);
 
       React.useEffect(() => {
         let live = true;
@@ -407,6 +444,43 @@ window.__ModuleLoader__.load({
       else if (tooLong) title = t('buttonTooLong', cap);
       else if (phase !== 'plain') title = t('buttonLocked');
 
+      // An emptied draft (the message was sent) has nothing left to revert to.
+      React.useEffect(() => {
+        if (text.trim() === '') {
+          setHistory(null);
+          setConfirming(false);
+        }
+      }, [text]);
+
+      // Any edit cancels a pending confirmation, so a stray first click cannot
+      // survive into a draft it was not about.
+      React.useEffect(() => {
+        setConfirming(false);
+      }, [text]);
+
+      const showRevert = history !== null && limits?.enableRevert !== false;
+
+      /**
+       * Restore the user's own text.
+       *
+       * Reuses writeBack, so the reference chips come back through the same
+       * mapping that put them there. When the draft was edited after the
+       * rewrite, the first click only asks: reverting would discard those edits.
+       */
+      function onRevert() {
+        if (history === null) return;
+        if (text !== history.optimized && !confirming) {
+          setConfirming(true);
+          return;
+        }
+        setError('');
+        const outcome = writeBack(inputActions, history.text, history.occurrences);
+        setPending(history.text);
+        setConfirming(false);
+        setHistory(null);
+        if (outcome.dropped.length > 0) setError(t('droppedReference'));
+      }
+
       async function onClick() {
         setError('');
         setBusy(true);
@@ -421,6 +495,11 @@ window.__ModuleLoader__.load({
           const warnings = Array.isArray(result.value.warnings) ? result.value.warnings : [];
           const outcome = writeBack(inputActions, result.value.text, occurrences);
           setPending(result.value.text);
+          setHistory((previous) =>
+            previous === null
+              ? { text, occurrences, optimized: result.value.text }
+              : { ...previous, optimized: result.value.text },
+          );
           if (outcome.dropped.length > 0) setError(t('droppedReference'));
           else if (warnings.length > 0) setError(warnings.join(' '));
         } catch (caught) {
@@ -435,6 +514,30 @@ window.__ModuleLoader__.load({
       return h(
         'div',
         { className: 'dspo-slot' },
+        showRevert
+          ? h(
+              'button',
+              {
+                type: 'button',
+                className: 'dspo-trigger dspo-revert',
+                'data-confirm': confirming ? 'true' : undefined,
+                style: {
+                  '--dspo-icon-color': confirming
+                    ? 'var(--dsw-alias-state-warn-primary)'
+                    : (BUTTON_COLOR_TOKENS[limits?.buttonColor] ?? BUTTON_COLOR_TOKENS.theme),
+                  '--dspo-icon-size': `${BUTTON_SIZE_PX[limits?.buttonSize] ?? BUTTON_SIZE_PX.md}px`,
+                },
+                'data-size': limits?.buttonSize ?? 'md',
+                title: confirming ? t('revertConfirm') : t('revertTitle'),
+                'aria-label': confirming ? t('revertConfirm') : t('revertTitle'),
+                onMouseDown: (event) => event.preventDefault(),
+                onClick: () => onRevert(),
+              },
+              confirming
+                ? h('span', { className: 'dspo-revert-label' }, t('revertConfirmShort'))
+                : h(UndoIcon),
+            )
+          : null,
         h(
           'button',
           {
@@ -734,6 +837,14 @@ window.__ModuleLoader__.load({
           disabled: busy,
           onChange: (value) => set('includeReferenceContent', value),
         }),
+        h(ToggleField, {
+          id: 'dspo-revert',
+          label: t('enableRevert'),
+          hint: t('enableRevertHint'),
+          checked: values.enableRevert,
+          disabled: busy,
+          onChange: (value) => set('enableRevert', value),
+        }),
         h(NumberField, { id: 'dspo-maxtokens', label: t('maxTokens'), value: values.maxTokens, min: 64, max: 32000, disabled: busy, onChange: (value) => set('maxTokens', value) }),
         h(NumberField, { id: 'dspo-timeout', label: t('timeoutMs'), value: values.timeoutMs, min: 1000, max: 600000, disabled: busy, onChange: (value) => set('timeoutMs', value) }),
         h(NumberField, { id: 'dspo-maxinput', label: t('maxInputChars'), value: values.maxInputChars, min: 1, max: 100000, disabled: busy, onChange: (value) => set('maxInputChars', value) }),
@@ -772,6 +883,8 @@ window.__ModuleLoader__.load({
 .dspo-trigger{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;min-height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--dspo-icon-color,var(--dsw-alias-label-secondary));cursor:pointer;flex:none;transition:background-color 120ms ease,color 120ms ease}
 .dspo-trigger[data-size=sm]{width:24px;height:24px;min-height:24px}
 .dspo-trigger[data-size=lg]{width:34px;height:34px;min-height:34px}
+.dspo-revert[data-confirm=true]{width:auto;min-width:28px;padding:0 8px;border-radius:14px}
+.dspo-revert-label{font-size:12px;line-height:1;white-space:nowrap}
 .dspo-glyph{width:var(--dspo-icon-size,16px);height:var(--dspo-icon-size,16px);display:block}
 .dspo-swatches{display:flex;flex-wrap:wrap;gap:8px}
 .dspo-swatch{width:26px;height:26px;padding:0;border:2px solid transparent;border-radius:50%;background-clip:content-box;cursor:pointer}

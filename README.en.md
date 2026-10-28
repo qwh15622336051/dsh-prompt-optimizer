@@ -22,6 +22,7 @@ One click replaces the draft. **Nothing is sent for you**: you review the result
 ## What it adds
 
 - **One-click rewrite** — a button in the composer tool row, left of the model selector, rewrites the current draft.
+- **Undo it if you dislike it** — a rewrite adds an undo control that restores the text you wrote yourself in one click (if you edited the rewrite, it asks first so your edits are never silently discarded).
 - **You pick the model** — choose from the models already configured in DSH, grouped by provider; leaving it empty follows the current session.
 - **The rewriting instruction is yours** — the system prompt sent to the model is editable text, and you can replace it wholesale.
 - **It reads what you reference** — `@file`, `@folder` and `@session` markers in the draft have their content read and handed to the rewriter, so the result names the code actually involved. Reads stay inside the session working directory and are capped.
@@ -57,6 +58,7 @@ Open **Settings → 提示词优化**, or **Settings → Plugins → this plugin
 | Order within that position | 40 | Lower is further left, to avoid other plugins in the same seat |
 | Icon colour | follow the theme | Seven presets, all taken from the host theme tokens |
 | Icon size | medium | Small / medium / large |
+| Allow undoing an optimization | on | A rewrite adds an undo control that restores your own text |
 
 ## Known limits
 

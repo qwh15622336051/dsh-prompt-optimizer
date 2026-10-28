@@ -68,6 +68,9 @@ export const SETTINGS_SCHEMA = Schema.object({
     .step(1)
     .default(32000)
     .description('所有引用内容合计的最大字符数。'),
+  enableRevert: Schema.boolean()
+    .default(true)
+    .description('优化后在按钮旁提供撤销入口，一键恢复你自己敲的内容。'),
   buttonSlot: Schema.union(
     [['right', '右工具栏（模型选择器左边）'], ['left', '左工具栏']].map(([value]) =>
       Schema.const(value),
@@ -116,6 +119,7 @@ export const CONFIG_KEYS = [
   'includeReferenceContent',
   'maxReferenceFileChars',
   'maxReferenceTotalChars',
+  'enableRevert',
   'buttonSlot',
   'buttonOrder',
   'buttonColor',
